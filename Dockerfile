@@ -97,31 +97,36 @@ RUN novnc_latest=$(curl -s https://api.github.com/repos/novnc/noVNC/releases/lat
 RUN nodejs_lts_latest=$(curl -s https://nodejs.org/download/release/index.json | jq -r -c '.[] | select(.lts != false).version' | head -n 1) \
     && wget https://nodejs.org/dist/${nodejs_lts_latest}/node-${nodejs_lts_latest}-linux-x64.tar.xz -P /root/ \
     && tar -xvf $(echo "/root/node-${nodejs_lts_latest}-linux-x64.tar.xz") -C /opt/ \
+    && rm -rf $(echo "/root/node-${nodejs_lts_latest}-linux-x64.tar.xz") \
     && ln -s $(echo "/opt/node-${nodejs_lts_latest}-linux-x64/bin/npm") /usr/bin/ \
     && ln -s $(echo "/opt/node-${nodejs_lts_latest}-linux-x64/bin/node") /usr/bin/ \
     && ln -s $(echo "/opt/node-${nodejs_lts_latest}-linux-x64/bin/npx") /usr/bin/ \
     && npm install -g appium --allow-root --unsafe-perm=true \
-    && ln -s $(echo "/opt/node-${nodejs_lts_latest}-linux-x64/bin/appium") /usr/bin/ \
-    && mkdir /root/noVNC/appium
+    && ln -s $(echo "/opt/node-${nodejs_lts_latest}-linux-x64/bin/appium") /usr/bin/
 
 #================================================
 # openbox configuration
 #================================================
-ADD logo.png /root/logo.png
+ADD bg/logo.png /root/bg/logo.png
 ADD .fehbg /root/.fehbg
 ADD rc.xml /etc/xdg/openbox/rc.xml
 RUN echo /root/.fehbg >> /etc/xdg/openbox/autostart
 
 #================================================
+# Logging
+#================================================
+ENV APPIUM_WEB_LOG=false
+ENV EMULATOR_WEB_LOG=false
+
+#================================================
 # RUN
 #================================================
 
-ADD vnc.sh /root/vnc.sh
-ADD appium.sh /root/appium.sh
+ADD config/ /root/config/
 
 COPY supervisord.conf /root/
 
-RUN chmod +x /root/vnc.sh && chmod +x /root/supervisord.conf && chmod +x /root/.fehbg && chmod +x /root/appium.sh
+RUN chmod +x /root/config/* && chmod +x /root/supervisord.conf && chmod +x /root/.fehbg
 
 EXPOSE 4723 6080
 
